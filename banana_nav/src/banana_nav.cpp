@@ -22,7 +22,7 @@ bool FindGoal(Goal &currentGoal,int8 map, int m_x,int m_y,float resolution){
 
 	//Stores the bounds of the map
 	int maxHeight = m_y; int maxWidth = m_x;
-	int bufferHeight = m_y/3;
+	int bufferHeight = m_y/6;
 	//for loop variables
 	int height = 0; int width = 0;
 
@@ -46,7 +46,7 @@ bool FindGoal(Goal &currentGoal,int8 map, int m_x,int m_y,float resolution){
 
 				LTcost = GetCost(width,height,map, maxWidth, maxHeight);
 
-				ROS_INFO("LTcost = %d",LTcost);//Used for Debug
+				//ROS_INFO("LTcost = %d",LTcost);//Used for Debug
 
 				//add in check if index is outside of map//////////////////////////////////////////////////////////////////////
 				if ((LTcost > buffer) && (LTtrigger == false)){//found a lethal cost and haven't found one before this.									//lethal points are trees and it WILL NOT see last layers trees

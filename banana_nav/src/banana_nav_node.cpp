@@ -153,7 +153,7 @@ while(field_length == 0 || field_width == 0){
 
 
 
-	while(~done){ //We run a switch until mission is completed. Thus it acts as a state machine
+	while(!done){ //We run a switch until mission is completed. Thus it acts as a state machine
 
 		ros::spinOnce();//Get new map before next planing decision
 
@@ -163,7 +163,7 @@ while(field_length == 0 || field_width == 0){
 
 		//Base_link is currently on a row
 		case false:
-			endofRow = ~FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution); //obtain goal to send to move_base
+			endofRow = !FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution); //obtain goal to send to move_base
 
 			// check that base_link is the right frame
 			goal.target_pose.header.frame_id = "base_link";
@@ -200,7 +200,14 @@ while(field_length == 0 || field_width == 0){
 			ros::spinOnce();
 
 			//Check if we are at an end of a row
-			endofRow = ~FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution);
+			endofRow = !FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution);
+			/*if(endofRow == true){			
+				ROS_INFO("endofRow = True");
+			}
+			else {
+				ROS_INFO("endofRow = False");
+			}
+			*/
 			break;
 
 			//////////////////////////////Find Next Row////////////////////////////////////////////////////////////////////////////////
@@ -217,6 +224,12 @@ while(field_length == 0 || field_width == 0){
 			//set the goals position
 			goal.target_pose.pose.position.x = currentGoal.x;
 			goal.target_pose.pose.position.y = currentGoal.y;
+			if(currentGoal.orientation == true){			
+				ROS_INFO("Orientation = True");
+			}
+			else {
+				ROS_INFO("Orientation = False");
+			}
 
 			if(currentGoal.orientation){//Turns base_link around to look for trees depending on direction
 
@@ -225,6 +238,7 @@ while(field_length == 0 || field_width == 0){
 				goal.target_pose.pose.orientation.z = tf::createQuaternionFromYaw(M_PI).getZ();
 				goal.target_pose.pose.orientation.w = tf::createQuaternionFromYaw(M_PI).getW();
 				direction = false;//base_link is now facing negative x
+				ROS_INFO("Direction = False");
 			}
 			else {
 				goal.target_pose.pose.orientation.x = tf::createQuaternionFromYaw(0).getX();
@@ -232,6 +246,7 @@ while(field_length == 0 || field_width == 0){
 				goal.target_pose.pose.orientation.z = tf::createQuaternionFromYaw(0).getZ();
 				goal.target_pose.pose.orientation.w = tf::createQuaternionFromYaw(0).getW();
 				direction = true;//base link is now facing positive x
+				ROS_INFO("Direction = True");
 			}
 
 			//Print current goal to terminal
