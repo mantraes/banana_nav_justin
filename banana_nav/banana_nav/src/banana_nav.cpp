@@ -9,6 +9,7 @@
 #include <banana_nav/banana_nav.h>
 #include "std_msgs/String.h"
 #include <nav_msgs/OccupancyGrid.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ bool FindGoal(Goal &currentGoal,int8 map, int m_x,int m_y,float resolution){
 
 	//Stores the bounds of the map
 	int maxHeight = m_y; int maxWidth = m_x;
-	int bufferHeight = m_y/3;
+	int bufferHeight = m_y/6;
 	//for loop variables
 	int height = 0; int width = 0;
 

@@ -14,6 +14,7 @@
 #include <move_base/move_base.h>
 #include <actionlib/client/simple_action_client.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 #include <math.h>
 #include <sstream>
 #include <iostream>
@@ -27,11 +28,14 @@ typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseCl
 
 typedef nav_msgs::OccupancyGrid occupancyGrid;
 
+typedef map_msgs::OccupancyGridUpdate occupancyGridUpdates;
+
 typedef geometry_msgs::Pose pose; //Not needed right now but maybe in the future
 
 
 //variable used to store the local costmap from move_base
 occupancyGrid global_map;
+occupancyGridUpdates global_map_updates;
 
 
 //function needed to read variables from topic
@@ -43,12 +47,21 @@ occupancyGrid global_map;
 	ROS_INFO("The field width is %d",costmap->info.height);
 }
 */
-
+/*
 void costmapCallback(const nav_msgs::OccupancyGrid::ConstPtr& costmap)
 {
 	global_map.info = costmap->info; //Sets local occupancy grid from move_base to use able global one
 	global_map.data = costmap->data;
 	global_map.header = costmap->header;
+}
+*/
+void updatecostmapCallback(const map_msgs::OccupancyGridUpdate::ConstPtr& costmap_updates)
+{
+	global_map_updates.height = costmap_updates->height;
+	global_map_updates.width = costmap_updates->width;
+	global_map_updates.data = costmap_updates->data;
+	
+	ROS_INFO("I am getting updates");
 }
 
 
@@ -68,7 +81,9 @@ int main(int argc, char** argv) {
 	//ros::Publisher goal_pub = banana_nav.advertise<std_msgs::String>("goal", 1000);
 
 	//Object that allow banana_nav to subscribe to move_bases local_costmap topic
-	ros::Subscriber subOGrid = banana_nav.subscribe("/move_base/local_costmap/costmap",1000,costmapCallback);
+	//ros::Subscriber subOGrid = banana_nav.subscribe("/move_base/local_costmap/costmap",1000,costmapCallback);
+
+	ros::Subscriber subOGridUpdates = banana_nav.subscribe("/move_base/local_costmap/costmap_updates",1000,updatecostmapCallback);
 
 	ros::Rate loop_rate(5); // 5Hz
 
@@ -111,8 +126,8 @@ int main(int argc, char** argv) {
 	}	*/
 
 	//Set the max length and width of the map based on info from the occupancy grid
-	field_length = global_map.info.height;
-	field_width = global_map.info.width;
+	field_length = global_map_updates.height;
+	field_width = global_map_updates.width;
 
 	// initilize goal
 	goal.target_pose.header.frame_id = "base_link";
@@ -134,8 +149,8 @@ while(field_length == 0 || field_width == 0){
 	ros::spinOnce();//Check topics for data
 
 	//Set the max length and width of the map based on info from the occupancy grid
-	field_length = global_map.info.height;
-	field_width = global_map.info.width;
+	field_length = global_map_updates.height;
+	field_width = global_map_updates.width;
 	ROS_INFO("Waiting on Local Cost Map"); //Waiting on Local Cost map error message
 	}
 
@@ -143,7 +158,7 @@ while(field_length == 0 || field_width == 0){
 	//Print out the size of the occupancy grid to see if it makes sense
 	ROS_INFO("The field length is %d",field_length);
 	ROS_INFO("The field width is %d",field_width);
-	ROS_INFO("The origion of the local map is located at x = %f and y = %f", global_map.info.origin.position.x,global_map.info.origin.position.y);
+	//ROS_INFO("The origion of the local map is located at x = %f and y = %f", global_map.info.origin.position.x,global_map.info.origin.position.y);
 	//tell the action client that we want to spin a thread by default
 	MoveBaseClient ac("move_base",true);
 
@@ -163,7 +178,7 @@ while(field_length == 0 || field_width == 0){
 
 		//Base_link is currently on a row
 		case false:
-			endofRow = !FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution); //obtain goal to send to move_base
+			endofRow = !FindGoal(currentGoal,global_map_updates.data,field_length,field_width,.05); //obtain goal to send to move_base
 
 			// check that base_link is the right frame
 			goal.target_pose.header.frame_id = "base_link";
@@ -200,7 +215,7 @@ while(field_length == 0 || field_width == 0){
 			ros::spinOnce();
 
 			//Check if we are at an end of a row
-			endofRow = !FindGoal(currentGoal,global_map.data,field_length,field_width,global_map.info.resolution);
+			endofRow = !FindGoal(currentGoal,global_map_updates.data,field_length,field_width,.05);
 			/*if(endofRow == true){			
 				ROS_INFO("endofRow = True");
 			}
@@ -215,7 +230,7 @@ while(field_length == 0 || field_width == 0){
 			//Need to find next row
 		case true:
 			//Add error check to FindRow
-			FindRow(currentGoal,global_map.data,field_length,field_width,direction,global_map.info.resolution); //Find goal that lines us up with next row
+			FindRow(currentGoal,global_map_updates.data,field_length,field_width,direction,.05); //Find goal that lines us up with next row
 
 			// check that base_link is the right frame
 			goal.target_pose.header.frame_id = "base_link";
@@ -283,7 +298,7 @@ while(field_length == 0 || field_width == 0){
 			ros::spinOnce();
 
 			//check if there are no more rows of trees
-			done = CheckifDone( global_map.data, field_length, field_width);
+			done = CheckifDone( global_map_updates.data, field_length, field_width);
 			break;
 
 		default:
